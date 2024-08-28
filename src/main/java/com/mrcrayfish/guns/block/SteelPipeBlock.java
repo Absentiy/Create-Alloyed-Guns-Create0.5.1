@@ -30,33 +30,29 @@ public class SteelPipeBlock extends HorizontalDirectionalBlock {
         super(properties);
     }
 
-    public boolean renderAsNormalBlock()
-    {
+    public boolean renderAsNormalBlock() {
         return false;
     }
 
-    public boolean isOpaqueCube()
-    {
+    public boolean isOpaqueCube() {
         return false;
     }
 
-    private VoxelShape getShape(BlockState state)
-    {
-        if(SHAPES.containsKey(state))
-        {
+    private VoxelShape getShape(BlockState state) {
+        if (SHAPES.containsKey(state)) {
             return SHAPES.get(state);
         }
         Direction direction = state.getValue(FACING);
         List<VoxelShape> shapes = new ArrayList<>();
-        shapes.add(VoxelShapeHelper.getRotatedShapes(VoxelShapeHelper.rotate(Block.box(5, 5, 0, 11, 11, 16), Direction.SOUTH))[direction.get2DDataValue()]);
+        shapes.add(VoxelShapeHelper.getRotatedShapes(
+                VoxelShapeHelper.rotate(Block.box(5, 5, 0, 11, 11, 16), Direction.SOUTH))[direction.get2DDataValue()]);
         VoxelShape shape = VoxelShapeHelper.combineAll(shapes);
         SHAPES.put(state, shape);
         return shape;
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter reader, BlockPos pos, CollisionContext context)
-    {
+    public VoxelShape getShape(BlockState state, BlockGetter reader, BlockPos pos, CollisionContext context) {
         return this.getShape(state);
     }
 

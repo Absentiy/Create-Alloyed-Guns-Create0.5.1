@@ -17,7 +17,6 @@ import com.mrcrayfish.guns.entity.GrenadeEntity;
 import com.mrcrayfish.guns.entity.MissileEntity;
 import com.mrcrayfish.guns.init.*;
 import com.mrcrayfish.guns.network.PacketHandler;
-import com.simibubi.create.foundation.data.CreateRegistrate;
 import net.minecraft.core.NonNullList;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.resources.ResourceLocation;
@@ -39,33 +38,28 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Mod(Reference.MOD_ID)
-public class GunMod
-{
+public class GunMod {
     public static boolean controllableLoaded = false;
     public static boolean backpackedLoaded = false;
     public static boolean playerReviveLoaded = false;
     public static final Logger LOGGER = LogManager.getLogger(Reference.MOD_ID);
 
-    public static final CreativeModeTab GROUP = new CreativeModeTab(Reference.MOD_ID)
-    {
+    public static final CreativeModeTab GROUP = new CreativeModeTab(Reference.MOD_ID) {
         @Override
-        public ItemStack makeIcon()
-        {
+        public ItemStack makeIcon() {
             ItemStack stack = new ItemStack(ModItems.PISTOL.get());
             stack.getOrCreateTag().putInt("AmmoCount", ModItems.PISTOL.get().getGun().getGeneral().getMaxAmmo());
             return stack;
         }
 
         @Override
-        public void fillItemList(NonNullList<ItemStack> items)
-        {
+        public void fillItemList(NonNullList<ItemStack> items) {
             super.fillItemList(items);
             CustomGunManager.fill(items);
         }
     }.setEnchantmentCategories(EnchantmentTypes.GUN, EnchantmentTypes.SEMI_AUTO_GUN);
 
-    public GunMod()
-    {
+    public GunMod() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.commonSpec);
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
@@ -88,30 +82,30 @@ public class GunMod
         playerReviveLoaded = ModList.get().isLoaded("playerrevive");
     }
 
-    private void onCommonSetup(FMLCommonSetupEvent event)
-    {
-        event.enqueueWork(() ->
-        {
+    private void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
             ModRecipeType.init();
             ModSyncedDataKeys.register();
-            CraftingHelper.register(new ResourceLocation(Reference.MOD_ID, "workbench_ingredient"), WorkbenchIngredient.Serializer.INSTANCE);
-            ProjectileManager.getInstance().registerFactory(ModItems.GRENADE.get(), (worldIn, entity, weapon, item, modifiedGun) -> new GrenadeEntity(ModEntities.GRENADE.get(), worldIn, entity, weapon, item, modifiedGun));
-            ProjectileManager.getInstance().registerFactory(ModItems.MISSILE.get(), (worldIn, entity, weapon, item, modifiedGun) -> new MissileEntity(ModEntities.MISSILE.get(), worldIn, entity, weapon, item, modifiedGun));
+            CraftingHelper.register(new ResourceLocation(Reference.MOD_ID, "workbench_ingredient"),
+                    WorkbenchIngredient.Serializer.INSTANCE);
+            ProjectileManager.getInstance().registerFactory(ModItems.GRENADE.get(),
+                    (worldIn, entity, weapon, item, modifiedGun) -> new GrenadeEntity(ModEntities.GRENADE.get(),
+                            worldIn, entity, weapon, item, modifiedGun));
+            ProjectileManager.getInstance().registerFactory(ModItems.MISSILE.get(),
+                    (worldIn, entity, weapon, item, modifiedGun) -> new MissileEntity(ModEntities.MISSILE.get(),
+                            worldIn, entity, weapon, item, modifiedGun));
             PacketHandler.init();
-            if(Config.COMMON.gameplay.improvedHitboxes.get())
-            {
+            if (Config.COMMON.gameplay.improvedHitboxes.get()) {
                 MinecraftForge.EVENT_BUS.register(new BoundingBoxManager());
             }
         });
     }
 
-    private void onClientSetup(FMLClientSetupEvent event)
-    {
+    private void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(ClientHandler::setup);
     }
 
-    private void onGatherData(GatherDataEvent event)
-    {
+    private void onGatherData(GatherDataEvent event) {
         DataGenerator generator = event.getGenerator();
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
         BlockTagGen blockTagGen = new BlockTagGen(generator, existingFileHelper);

@@ -5,15 +5,18 @@ import java.util.function.Predicate;
 import com.google.common.base.Predicates;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllShapes;
-import com.simibubi.create.content.contraptions.base.KineticTileEntity;
-import com.simibubi.create.content.contraptions.components.steam.PoweredShaftBlock;
-import com.simibubi.create.content.contraptions.relays.elementary.AbstractSimpleShaftBlock;
-import com.simibubi.create.content.contraptions.relays.encased.EncasedShaftBlock;
-import com.simibubi.create.content.curiosities.girder.GirderEncasedShaftBlock;
-import com.simibubi.create.foundation.utility.placement.IPlacementHelper;
-import com.simibubi.create.foundation.utility.placement.PlacementHelpers;
-import com.simibubi.create.foundation.utility.placement.PlacementOffset;
-import com.simibubi.create.foundation.utility.placement.util.PoleHelper;
+
+import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
+import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedShaftBlock;
+
+import com.simibubi.create.content.decoration.encasing.EncasableBlock;
+import com.simibubi.create.content.kinetics.steamEngine.PoweredShaftBlock;
+import com.simibubi.create.content.decoration.girder.GirderEncasedShaftBlock;
+import com.simibubi.create.foundation.placement.IPlacementHelper;
+import com.simibubi.create.foundation.placement.PlacementHelpers;
+import com.simibubi.create.foundation.placement.PlacementOffset;
+import com.simibubi.create.foundation.placement.PoleHelper;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
@@ -23,16 +26,19 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class ShaftBlock extends AbstractSimpleShaftBlock {
+public class ShaftBlock extends AbstractSimpleShaftBlock implements EncasableBlock {
 
     public static final int placementHelperId = PlacementHelpers.register(new PlacementHelper());
 
@@ -47,10 +53,12 @@ public class ShaftBlock extends AbstractSimpleShaftBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         BlockState stateForPlacement = super.getStateForPlacement(context);
-        return pickCorrectShaftType(stateForPlacement, context.getLevel(), context.getClickedPos());
+        return pickCorrectShaftType(stateForPlacement, context.getLevel(),
+                context.getClickedPos());
     }
 
-    public static BlockState pickCorrectShaftType(BlockState stateForPlacement, Level level, BlockPos pos) {
+    public static BlockState pickCorrectShaftType(BlockState stateForPlacement,
+            Level level, BlockPos pos) {
         if (PoweredShaftBlock.stillValid(stateForPlacement, level, pos))
             return PoweredShaftBlock.getEquivalent(stateForPlacement);
         return stateForPlacement;
@@ -72,31 +80,35 @@ public class ShaftBlock extends AbstractSimpleShaftBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand,
-                                 BlockHitResult ray) {
+    public InteractionResult use(BlockState state, Level world, BlockPos pos,
+            Player player, InteractionHand hand,
+            BlockHitResult ray) {
         if (player.isShiftKeyDown() || !player.mayBuild())
             return InteractionResult.PASS;
 
         ItemStack heldItem = player.getItemInHand(hand);
-        for (EncasedShaftBlock encasedShaft : new EncasedShaftBlock[] { AllBlocks.ANDESITE_ENCASED_SHAFT.get(),
+        for (EncasedShaftBlock encasedShaft : new EncasedShaftBlock[] {
+                AllBlocks.ANDESITE_ENCASED_SHAFT.get(),
                 AllBlocks.BRASS_ENCASED_SHAFT.get() }) {
-
-            if (!encasedShaft.getCasing()
-                    .isIn(heldItem))
+            Item casing = encasedShaft.getCasing().asItem();
+            if (!heldItem.is(casing))
                 continue;
 
             if (world.isClientSide)
                 return InteractionResult.SUCCESS;
 
-            KineticTileEntity.switchToBlockState(world, pos, encasedShaft.defaultBlockState()
-                    .setValue(AXIS, state.getValue(AXIS)));
+            KineticBlockEntity.switchToBlockState(world, pos,
+                    encasedShaft.defaultBlockState()
+                            .setValue(AXIS, state.getValue(AXIS)));
             return InteractionResult.SUCCESS;
         }
 
         if (AllBlocks.METAL_GIRDER.isIn(heldItem) && state.getValue(AXIS) != Axis.Y) {
-            KineticTileEntity.switchToBlockState(world, pos, AllBlocks.METAL_GIRDER_ENCASED_SHAFT.getDefaultState()
-                    .setValue(WATERLOGGED, state.getValue(WATERLOGGED))
-                    .setValue(GirderEncasedShaftBlock.HORIZONTAL_AXIS, state.getValue(AXIS) == Axis.Z ? Axis.Z : Axis.X));
+            KineticBlockEntity.switchToBlockState(world, pos,
+                    AllBlocks.METAL_GIRDER_ENCASED_SHAFT.getDefaultState()
+                            .setValue(WATERLOGGED, state.getValue(WATERLOGGED))
+                            .setValue(GirderEncasedShaftBlock.HORIZONTAL_AXIS,
+                                    state.getValue(AXIS) == Axis.Z ? Axis.Z : Axis.X));
             if (!world.isClientSide && !player.isCreative()) {
                 heldItem.shrink(1);
                 if (heldItem.isEmpty())
@@ -115,7 +127,7 @@ public class ShaftBlock extends AbstractSimpleShaftBlock {
 
     @MethodsReturnNonnullByDefault
     private static class PlacementHelper extends PoleHelper<Direction.Axis> {
-        // used for extending a shaft in its axis, like the piston poles. works with
+        // used for extending a shaft in its axis, like the piston poles.works with
         // shafts and cogs
 
         private PlacementHelper() {
@@ -136,11 +148,12 @@ public class ShaftBlock extends AbstractSimpleShaftBlock {
 
         @Override
         public PlacementOffset getOffset(Player player, Level world, BlockState state, BlockPos pos,
-                                         BlockHitResult ray) {
+                BlockHitResult ray) {
             PlacementOffset offset = super.getOffset(player, world, state, pos, ray);
             if (offset.isSuccessful())
                 offset.withTransform(offset.getTransform()
-                        .andThen(s -> ShaftBlock.pickCorrectShaftType(s, world, offset.getBlockPos())));
+                        .andThen(s -> ShaftBlock.pickCorrectShaftType(s, world,
+                                offset.getBlockPos())));
             return offset;
         }
 

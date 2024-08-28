@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " X",
+    "S#G",
+    " X"
+  ],
+  "key": {
+    "#": {
+      "item": "alloyedguns:crude_gun_kit"
+    },
+    "S": {
+      "item": "minecraft:slime_ball"
+    },
+    "X": {
+      "item": "alloyed:steel_ingot"
+    },
+    "G":{
+      "tag": "forge:gunpowder"
+    }
+  },
+  "result": {
+    "item": "alloyedguns:basic_gun_kit"
+  }
+}
